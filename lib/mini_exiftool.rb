@@ -93,7 +93,11 @@ class MiniExiftool
   #   UTF-8 characters or +false+ if no replacing should be done,
   #   default is +false+
   # * <code>:timestamps</code> generating DateTime objects instead of
-  #   Time objects if set to <code>DateTime</code>, default is +Time+
+  #   Time objects if set to <code>DateTime</code>, default is +Time+.
+  #   If you are using <code>ActiveSupport::TimeZone</code>, you can pass
+  #   'Time.zone' to this option (requires a <code>:date_format</code> change
+  #   as noted above in the <code>:date_format</code> description). This would
+  #   likely be the case when using this gem with Ruby on Rails.
   #
   #   <b>ATTENTION:</b> By default, Time objects are created using
   #   <code>Time.local</code> therefore they use <em>your local timezone</em>,
@@ -456,6 +460,8 @@ class MiniExiftool
           value = Time.parse(s)
         elsif @opts[:timestamps] == DateTime
           value = DateTime.parse(s)
+        elsif @opts[:timestamps] == 'Time.zone'
+          value = Time.zone.parse(s)
         else
           raise MiniExiftool::Error.new("Value #{@opts[:timestamps]} not allowed for option timestamps.")
         end
