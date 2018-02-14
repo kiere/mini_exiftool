@@ -80,6 +80,11 @@ class MiniExiftool
   # * <code>:coord_format</code> set format for GPS coordinates (See
   #   -c-option of the exiftool command-line application, default is +nil+
   #   that means exiftool standard)
+  # * <code>:date_format</code> set format for timestamps (See
+  #   -d-option of the exiftool command-line application, default is +nil+
+  #   that means exiftool standard).  If you want to use this option with
+  #   Ruby on Rails set the format string to "%Y:%m:%d %H:%M:%S%z" (adds %z to
+  #   preserve time zone information when present).
   # * <code>:fast</code> useful when reading JPEGs over a slow network connection
   #   (See -fast-option of the exiftool command-line application, default is +false+)
   # * <code>:fast2</code> useful when reading JPEGs over a slow network connection
@@ -90,9 +95,11 @@ class MiniExiftool
   # * <code>:timestamps</code> generating DateTime objects instead of
   #   Time objects if set to <code>DateTime</code>, default is +Time+
   #
-  #   <b>ATTENTION:</b> Time objects are created using <code>Time.local</code>
-  #   therefore they use <em>your local timezone</em>, DateTime objects instead
-  #   are created <em>without timezone</em>!
+  #   <b>ATTENTION:</b> By default, Time objects are created using
+  #   <code>Time.local</code> therefore they use <em>your local timezone</em>,
+  #   DateTime objects instead are created <em>without timezone</em>!
+  #   If you would like to try to capture the original timezone, when provided
+  #   in the EXIF data, see the <code>:date_format</code> option above.
   # * <code>:exif_encoding</code>, <code>:iptc_encoding</code>,
   #   <code>:xmp_encoding</code>, <code>:png_encoding</code>,
   #   <code>:id3_encoding</code>, <code>:pdf_encoding</code>,
@@ -149,7 +156,8 @@ class MiniExiftool
     params = '-j '
     params << (@opts[:numerical] ? '-n ' : '')
     params << (@opts[:composite] ? '' : '-e ')
-    params << (@opts[:coord_format] ? "-c \"#{@opts[:coord_format]}\"" : '')
+    params << (@opts[:coord_format] ? "-c \"#{@opts[:coord_format]}\" " : '')
+    params << (@opts[:date_format] ? "-d \"#{@opts[:date_format]}\" " : '')
     params << (@opts[:fast] ? '-fast ' : '')
     params << (@opts[:fast2] ? '-fast2 ' : '')
     params << generate_encoding_params
@@ -411,7 +419,7 @@ class MiniExiftool
   def convert_before_save val
     case val
     when Time
-      val = val.strftime('%Y:%m:%d %H:%M:%S')
+      val = val.strftime('%Y:%m:%d %H:%M:%S%z')
     end
     val
   end
@@ -441,7 +449,7 @@ class MiniExiftool
     return value unless value.kind_of?(String)
     return value unless value.valid_encoding?
     case value
-    when /^\d{4}:\d\d:\d\d \d\d:\d\d:\d\d/
+    when /^\d{4}:\d\d:\d\d \d\d:\d\d:\d\d(-\d\d:\d\d)?/
       s = value.sub(/^(\d+):(\d+):/, '\1-\2-')
       begin
         if @opts[:timestamps] == Time
